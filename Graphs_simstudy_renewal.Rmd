@@ -1,0 +1,674 @@
+---
+title: "Results_simulation_renewal"
+output: pdf_document
+editor_options: 
+  chunk_output_type: console
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r Load packages}
+
+library(ggplot2)
+library(tidyr)
+library(dplyr)
+library(ggh4x) # To solve the problem of facet_wrap and facet_grid with panel label placement. https://cran.r-project.org/web/packages/ggh4x/vignettes/Facets.html
+```
+
+```{r Choose colors and shapes}
+cols_inct <- brewer.pal(6, "Set1")[1:3]
+shapes_aprch <- 21:23
+```
+
+
+```{r Load estimates}
+# setwd("~/Documents/Incubation and latent period Vietnam/incubation_and_latent_period/simulation_renewal")
+# 
+# load("results/Results_after_run_162.RData")
+# 
+# n1200 <- dat_results
+# 
+# load("results/Results_after_run_162_n500_remove1200.RData")
+# 
+# dat_results <- dat_results %>% filter(n != 1200)
+# n500 <- dat_results
+# 
+# results <- rbind(n500, n1200)
+# #save(results, file = "results/Simulation_renewal_results.RData")
+# 
+# # Load function
+# source("fun_simulate_data_renewal.R")
+```
+
+
+```{r Table}
+# 
+# 
+# # approach, vb. Qin x Weibull
+# deng <- results[, c(1:8, 9:29)]
+# qin <- results[, c(1:8, 30:50)]
+# deng$approach <- paste("Deng x", deng$assumed_distribution)
+# qin$approach <- paste("Qin x", qin$assumed_distribution)
+# 
+# # percentile
+# pi <- deng[ , c(1:8,30, 9:11)]
+# colnames(pi)[10:12] <- c("bias_or_mean", "lower", "upper")
+# pi$percentile_or_pi <- "pi"
+# 
+# Q1 <- deng[ , c(1:8,30, 12:14)]
+# colnames(Q1)[10:12] <- c("bias_or_mean", "lower", "upper")
+# Q1$percentile_or_pi <- "0.25"
+# 
+# Q2 <- deng[ , c(1:8,30, 15:17)]
+# colnames(Q2)[10:12] <- c("bias_or_mean", "lower", "upper")
+# Q2$percentile_or_pi <- "0.5"
+# 
+# Q3 <- deng[ , c(1:8,30, 18:20)]
+# colnames(Q3)[10:12] <- c("bias_or_mean", "lower", "upper")
+# Q3$percentile_or_pi <- "0.9"
+# 
+# Q4 <- deng[ , c(1:8,30, 21:23)]
+# colnames(Q4)[10:12] <- c("bias_or_mean", "lower", "upper")
+# Q4$percentile_or_pi <- "0.95"
+# 
+# Q5 <- deng[ , c(1:8,30, 24:26)]
+# colnames(Q5)[10:12] <- c("bias_or_mean", "lower", "upper")
+# Q5$percentile_or_pi <- "0.975"
+# 
+# Q6 <- deng[ , c(1:8,30, 27:29)]
+# colnames(Q6)[10:12] <- c("bias_or_mean", "lower", "upper")
+# Q6$percentile_or_pi <- "0.99"
+# 
+# results_new <- rbind(pi, Q1, Q2, Q3, Q4, Q5, Q6)
+# results_new$method <- "Deng"
+# 
+# pi <- qin[ , c(1:8,30, 9:11)]
+# colnames(pi)[10:12] <- c("bias_or_mean", "lower", "upper")
+# pi$percentile_or_pi <- "pi"
+# 
+# Q1 <- qin[ , c(1:8,30, 12:14)]
+# colnames(Q1)[10:12] <- c("bias_or_mean", "lower", "upper")
+# Q1$percentile_or_pi <- "0.25"
+# 
+# Q2 <- qin[ , c(1:8,30, 15:17)]
+# colnames(Q2)[10:12] <- c("bias_or_mean", "lower", "upper")
+# Q2$percentile_or_pi <- "0.5"
+# 
+# Q3 <- qin[ , c(1:8,30, 18:20)]
+# colnames(Q3)[10:12] <- c("bias_or_mean", "lower", "upper")
+# Q3$percentile_or_pi <- "0.9"
+# 
+# Q4 <- qin[ , c(1:8,30, 21:23)]
+# colnames(Q4)[10:12] <- c("bias_or_mean", "lower", "upper")
+# Q4$percentile_or_pi <- "0.95"
+# 
+# Q5 <- qin[ , c(1:8,30, 24:26)]
+# colnames(Q5)[10:12] <- c("bias_or_mean", "lower", "upper")
+# Q5$percentile_or_pi <- "0.975"
+# 
+# Q6 <- qin[ , c(1:8,30, 27:29)]
+# colnames(Q6)[10:12] <- c("bias_or_mean", "lower", "upper")
+# Q6$percentile_or_pi <- "0.99"
+# 
+# results_qin <- rbind(pi, Q1, Q2, Q3, Q4, Q5, Q6)
+# results_qin$method <- "Qin"
+# 
+# results <- rbind(results_new, results_qin)
+# 
+# #save(results, file = "Results_simulation_renewal_organized.RData")
+
+```
+
+
+```{r Load estimates NEW}
+setwd("~/Documents/Incubation and latent period Vietnam/incubation_and_latent_period/simulation_renewal")
+
+load("results/final/Results_rounded_data.RData")
+
+results <- dat_results
+
+save(results, file = "results/Simulation_renewal_results_final_rounded_data.RData")
+
+# Load function
+source("fun_simulate_data_renewal.R")
+```
+
+
+```{r Table NEW}
+
+
+# approach, vb. Qin x Weibull
+deng <- results[, c(1:8, 9:29)] 
+qin <- results[, c(1:8, 30:50)]
+deng$approach <- paste("Deng x", deng$assumed_distribution)
+qin$approach <- paste("Qin x", qin$assumed_distribution)
+
+# percentile
+pi <- deng[ , c(1:8,30, 9:11)]
+colnames(pi)[10:12] <- c("bias_or_mean", "lower", "upper")
+pi$percentile_or_pi <- "pi"
+
+Q1 <- deng[ , c(1:8,30, 12:14)]
+colnames(Q1)[10:12] <- c("bias_or_mean", "lower", "upper")
+Q1$percentile_or_pi <- "0.25"
+
+Q2 <- deng[ , c(1:8,30, 15:17)]
+colnames(Q2)[10:12] <- c("bias_or_mean", "lower", "upper")
+Q2$percentile_or_pi <- "0.5"
+
+Q3 <- deng[ , c(1:8,30, 18:20)]
+colnames(Q3)[10:12] <- c("bias_or_mean", "lower", "upper")
+Q3$percentile_or_pi <- "0.9"
+
+Q4 <- deng[ , c(1:8,30, 21:23)]
+colnames(Q4)[10:12] <- c("bias_or_mean", "lower", "upper")
+Q4$percentile_or_pi <- "0.95"
+
+Q5 <- deng[ , c(1:8,30, 24:26)]
+colnames(Q5)[10:12] <- c("bias_or_mean", "lower", "upper")
+Q5$percentile_or_pi <- "0.975"
+
+Q6 <- deng[ , c(1:8,30, 27:29)]
+colnames(Q6)[10:12] <- c("bias_or_mean", "lower", "upper")
+Q6$percentile_or_pi <- "0.99"
+
+results_new <- rbind(pi, Q1, Q2, Q3, Q4, Q5, Q6)
+results_new$method <- "Deng"
+
+pi <- qin[ , c(1:8,30, 9:11)]
+colnames(pi)[10:12] <- c("bias_or_mean", "lower", "upper")
+pi$percentile_or_pi <- "pi"
+
+Q1 <- qin[ , c(1:8,30, 12:14)]
+colnames(Q1)[10:12] <- c("bias_or_mean", "lower", "upper")
+Q1$percentile_or_pi <- "0.25"
+
+Q2 <- qin[ , c(1:8,30, 15:17)]
+colnames(Q2)[10:12] <- c("bias_or_mean", "lower", "upper")
+Q2$percentile_or_pi <- "0.5"
+
+Q3 <- qin[ , c(1:8,30, 18:20)]
+colnames(Q3)[10:12] <- c("bias_or_mean", "lower", "upper")
+Q3$percentile_or_pi <- "0.9"
+
+Q4 <- qin[ , c(1:8,30, 21:23)]
+colnames(Q4)[10:12] <- c("bias_or_mean", "lower", "upper")
+Q4$percentile_or_pi <- "0.95"
+
+Q5 <- qin[ , c(1:8,30, 24:26)]
+colnames(Q5)[10:12] <- c("bias_or_mean", "lower", "upper")
+Q5$percentile_or_pi <- "0.975"
+
+Q6 <- qin[ , c(1:8,30, 27:29)]
+colnames(Q6)[10:12] <- c("bias_or_mean", "lower", "upper")
+Q6$percentile_or_pi <- "0.99"
+
+results_qin <- rbind(pi, Q1, Q2, Q3, Q4, Q5, Q6)
+results_qin$method <- "Qin"
+
+results <- rbind(results_new, results_qin)
+
+save(results, file = "Results_simulation_renewal_organized_final_rounded_data.RData")
+
+```
+
+
+```{r Table}
+
+# bias in percentiles
+# a) generation method DengQin
+# b) generation method Leitzinger
+# with pi
+
+#load("Results_simulation_renewal_organized.RData")
+load("Results_simulation_renewal_organized_final_rounded_data.RData")
+
+
+
+results <- results %>% filter(method == "Deng")
+#results$approach <- factor(results$approach, levels = c("Deng x gamma", "Deng x lognormal", "Deng x Weibull"), labels = c("gamma", "lognormal", "Weibull")) %>% as.character()
+
+results$approach[results$approach == "Deng x lognormal"] <- "lognormal"
+results$approach[results$approach == "Deng x gamma"] <- "gamma"
+results$approach[results$approach == "Deng x Weibull"] <- "Weibull"
+
+colnames(results)[3] <- "true_pi"
+
+temp <- results %>% select(n, generation_method, estimation_method, true_pi, distribution_T, approach, percentile_or_pi, bias_or_mean) %>% spread(percentile_or_pi, bias_or_mean)
+temp2 <- results %>% select(n, generation_method, estimation_method, true_pi, distribution_T, approach, percentile_or_pi, lower) %>% spread(percentile_or_pi, lower)
+colnames(temp2)[7:13] <- paste(colnames(temp2)[7:13], "_lower", sep = "")
+temp3 <- results %>% select(n, generation_method, estimation_method, true_pi, distribution_T, approach, percentile_or_pi, upper) %>% spread(percentile_or_pi, upper)
+colnames(temp3)[7:13] <- paste(colnames(temp3)[7:13], "_upper", sep = "")
+
+new <- temp %>% left_join(temp2) %>% left_join(temp3)
+
+new[,7:27] <- round(new[,7:27],2)
+
+results_deng <- new[ , c(0,2,1,4,5,3,7,14,21,8,15,22,9,16,23,10,17,24,11,18,25,12,19,26)+1] %>% filter(generation_method == "DengQin") %>% arrange(n, distribution_T,estimation_method, true_pi, approach)
+results_deng <- results_deng[!duplicated(results_deng),]
+
+results_leitz <- new[ , c(0, 2,1,4,5,3,7,14,21,8,15,22,9,16,23,10,17,24,11,18,25,12,19,26)+1] %>% filter(generation_method == "Leitzinger") %>% arrange(n, distribution_T,estimation_method, true_pi, approach)
+
+save(results_deng, file = "results/Table_Deng.RData")
+save(results_leitz, file = "results/Table_epidemiccurve.RData")
+
+copy_to_clipboard(results_leitz)
+```
+
+```{r Figures 1 and 2 NEW}
+
+# bias in percentiles
+# a) generation method DengQin
+# b) generation method Leitzinger
+# with pi
+
+#load("Results_simulation_renewal_organized.RData")
+load("Results_simulation_renewal_organized_final_rounded_data.RData")
+
+results <- results %>% filter(method == "Deng")
+#results$approach <- factor(results$approach, levels = c("Deng x gamma", "Deng x lognormal", "Deng x Weibull"), labels = c("gamma", "lognormal", "Weibull")) %>% as.character()
+
+results$distribution_T <- recode(results$distribution_T, heavytail = "Burr")
+
+results$approach[results$approach == "Deng x lognormal"] <- "lognormal"
+results$approach[results$approach == "Deng x gamma"] <- "gamma"
+results$approach[results$approach == "Deng x Weibull"] <- "Weibull"
+
+results$approach_short <- factor(results$approach, levels = c("lognormal", "gamma", "Weibull"), labels = c("LN", "GA", "WB"))
+
+results$correct_assumption <- "z"
+results$distribution_T <- as.character(results$distribution_T)
+results$correct_assumption[results$distribution_T == results$approach] <- results$distribution_T[results$distribution_T == results$approach]
+
+results$correct_assumption <- factor(results$correct_assumption, levels = c("lognormal", "Weibull", "z"))
+
+selected_perc_a <- results %>% filter(generation_method == "DengQin", n == 1200, estimation_method == "pi", method == "Deng",
+                               percentile_or_pi %in% c("0.5", "0.95", "0.99"),
+                               pi %in% c(0,0.2)
+                               )
+
+selected_perc_b <- results %>% filter(generation_method == "Leitzinger", n == 1200, estimation_method == "pi", method == "Deng",
+                               percentile_or_pi %in% c("0.5", "0.95", "0.99"),
+                                pi == 0) # pi was not used in generation so remove the duplicates
+
+
+selected_c <- results %>% filter(generation_method == "DengQin", n == 1200, method == "Deng", pi %in% c(0,0.2),
+                               percentile_or_pi == "pi"
+                               )
+
+selected_d <- results %>% filter(generation_method == "Leitzinger", n == 1200, method == "Deng", pi == 0,
+                               percentile_or_pi == "pi"
+                               )
+
+
+selected_perc_e <- results %>% filter(generation_method == "DengQin", n == 1200, estimation_method == "nopi", method == "Deng",
+                               percentile_or_pi %in% c("0.5", "0.95", "0.99"),
+                               pi %in% c(0,0.2)
+                               )
+
+selected_perc_f <- results %>% filter(generation_method == "Leitzinger", n == 1200, estimation_method == "nopi", method == "Deng",
+                               percentile_or_pi %in% c("0.5", "0.95", "0.99"),
+                                pi == 0) # pi was not used in generation so remove the duplicates
+
+selected_perc_a$pi <- factor(selected_perc_a$pi, levels = c(0, 0.2), labels = c("pi: 0", " 0.2"))
+selected_perc_a$percentile_or_pi <- factor(selected_perc_a$percentile_or_pi, levels = c(0.5, 0.95, 0.99), labels = c("Percentile: 50*'%'", "95*'%'", "99*'%'"))
+
+draw_key_cust <- function(data, params, size) {
+  data$fill <- data$colour
+  draw_key_rect(data, params, size)
+}
+
+# a
+(fig_a <- ggplot(selected_perc_a) + geom_hline(yintercept = 0, linetype = "dashed") +  geom_linerange(aes(ymin = lower, ymax = upper, x = approach_short, col = distribution_T), position = position_dodge(width = 0.5)) + geom_point(key_glyph = "cust", aes(x = approach_short, y = bias_or_mean, col = distribution_T, fill = correct_assumption), shape = 23, position = position_dodge(width = 0.5)) +
+   scale_color_manual(values = cols_inct) +
+    scale_fill_manual(values = c(cols_inct[2:3], "white")) + guides(fill = "none") +
+  facet_grid(percentile_or_pi ~ pi, scales = "free_y",
+        labeller = label_parsed) + theme_bw() + theme(legend.position = "bottom") + guides(fill = "none") + labs(colour = "True distribution", x = "Mixture approach", y = "Bias (days)") + #theme(axis.title.x=element_blank(),
+      # axis.text.x=element_blank(),
+      # axis.ticks.x=element_blank()) +
+theme(strip.background = element_rect(fill=c("white"))))
+
+
+selected_perc_b$percentile_or_pi <- factor(selected_perc_b$percentile_or_pi, levels = c(0.5, 0.95, 0.99), labels = c("Percentile: 50*'%'", "95*'%'", "99*'%'"))
+
+# b
+(fig_b <- ggplot(selected_perc_b) + geom_hline(yintercept = 0, linetype = "dashed") + geom_linerange(aes(ymin = lower, ymax = upper, x = approach_short, col = distribution_T), position = position_dodge(width = 0.5)) + geom_point(key_glyph = "cust", aes(x = approach_short, y = bias_or_mean, col = distribution_T, fill = correct_assumption), shape = 23, position = position_dodge(width = 0.5)) +
+   scale_color_manual(values = cols_inct) +
+    scale_fill_manual(values = c(cols_inct[2:3], "white")) + guides(fill = "none") + facet_grid(percentile_or_pi ~ ., scales = "free_y", labeller = label_parsed) + theme_bw() + theme(legend.position = "bottom") + labs(colour = "True distribution", x = "Mixture approach", y = "Bias (days)")+ #theme(axis.title.x=element_blank(),
+      # axis.text.x=element_blank(),
+      # axis.ticks.x=element_blank()) +
+theme(strip.background = element_rect(fill=c("white"))))
+
+selected_c$pi_new <- factor(selected_c$pi, levels = c(0, 0.2), labels = c("pi: 0", " 0.2"))
+
+# c
+(fig_c <- ggplot(selected_c)+ geom_linerange(aes(ymin = lower, ymax = upper, x = approach_short, col = distribution_T), position = position_dodge(width = 0.5)) + geom_point(key_glyph = "cust", aes(x = approach_short, y = bias_or_mean, col = distribution_T, fill = correct_assumption), shape = 23, position = position_dodge(width = 0.5)) +
+    scale_color_manual(values = cols_inct) + scale_fill_manual(values = c(cols_inct[2:3], "white")) + facet_grid(. ~ pi_new, scales = "free_y", labeller = label_parsed) + geom_hline(aes(yintercept = pi), linetype = "dashed") +
+  theme_bw() + theme(legend.position = "bottom") + guides(col = "none", fill = "none") + labs(x = "Mixture approach", y = expression(hat(pi)))+ #theme(axis.title.x=element_blank(),
+#       axis.text.x=element_blank(),
+#       axis.ticks.x=element_blank()) +
+theme(strip.background = element_rect(fill=c("white"))))
+
+
+
+# d
+(fig_d <- ggplot(selected_d)  +  geom_linerange(aes(ymin = lower, ymax = upper, x = approach_short, col = distribution_T), position = position_dodge(width = 0.5)) + geom_point(key_glyph = "cust", aes(x = approach_short, y = bias_or_mean, col = distribution_T, fill = correct_assumption), shape = 23, position = position_dodge(width = 0.5)) + scale_fill_manual(values = c(cols_inct[2:3], "white")) +
+   scale_color_manual(values = cols_inct) + scale_y_continuous(limits = c(0,1))+
+  theme_bw() + theme(legend.position = "bottom") + guides(col = "none", fill = "none") + labs(x = "Mixture approach", y = expression(hat(pi)))+ #theme(axis.title.x=element_blank(),
+  #     axis.text.x=element_blank(),
+  #     axis.ticks.x=element_blank()) +
+theme(strip.background = element_rect(fill=c("white"))))
+
+selected_perc_e$pi <- factor(selected_perc_e$pi, levels = c(0, 0.2), labels = c("pi: 0", " 0.2"))
+selected_perc_e$percentile_or_pi <- factor(selected_perc_e$percentile_or_pi, levels = c(0.5, 0.95, 0.99), labels = c("Percentile: 50*'%'", "95*'%'", "99*'%'"))
+
+# e
+(fig_e <- ggplot(selected_perc_e) + geom_hline(yintercept = 0, linetype = "dashed") + geom_linerange(aes(ymin = lower, ymax = upper, x = approach_short, col = distribution_T), position = position_dodge(width = 0.5)) + geom_point(key_glyph = "cust", aes(x = approach_short, y = bias_or_mean, col = distribution_T, fill = correct_assumption), shape = 23, position = position_dodge(width = 0.5)) + 
+    scale_color_manual(values = cols_inct) +
+    scale_fill_manual(values = c(cols_inct[2:3], "white")) + facet_grid(percentile_or_pi ~ pi, scales = "free_y", labeller = label_parsed) + theme_bw() + theme(legend.position = "bottom") + guides(col = "none", fill = "none") + labs(colour = "True distribution", x = "Approach", y = "Bias (days)")+ #theme(axis.title.x=element_blank(),
+#       axis.text.x=element_blank(),
+#       axis.ticks.x=element_blank()) +
+theme(strip.background = element_rect(fill=c("white"))))
+
+#selected_perc_f$pi <- factor(selected_perc_f$pi, levels = c(0, 0.2), labels = c("pi: 0", " 0.2"))
+selected_perc_f$percentile_or_pi <- factor(selected_perc_f$percentile_or_pi, levels = c(0.5, 0.95, 0.99), labels = c("Percentile: 50*'%'", "95*'%'", "99*'%'"))
+
+
+
+# f
+(fig_f <- ggplot(selected_perc_f) + geom_hline(yintercept = 0, linetype = "dashed") +  geom_linerange(aes(ymin = lower, ymax = upper, x = approach_short, col = distribution_T), position = position_dodge(width = 0.5)) + geom_point(key_glyph = "cust", aes(x = approach_short, y = bias_or_mean, col = distribution_T, fill = correct_assumption), shape = 23, position = position_dodge(width = 0.5)) +
+    scale_color_manual(values = cols_inct) + scale_fill_manual(values = c(cols_inct[2:3], "white"))+ guides(fill = "none") +
+    facet_grid(percentile_or_pi ~ ., scales = "free_y", labeller = label_parsed) + theme_bw() + theme(legend.position = "bottom") + labs(colour = "True distribution", x = "Approach", y = "Bias (days)")+ #theme(axis.title.x=element_blank(),
+   #    axis.text.x=element_blank(),
+   #    axis.ticks.x=element_blank()) +
+theme(strip.background = element_rect(fill=c("white"))))
+
+
+######
+
+library(patchwork)
+
+fig1abcd <- fig_a + fig_b + fig_c + fig_d + plot_layout(ncol = 2, widths = unit(c(10, 4), c('cm', 'cm')), heights = unit(c(10, 4), c('cm', 'cm'))) +  
+ plot_layout(guides = "collect") +  plot_annotation(tag_levels = 'a') & theme(legend.position = "bottom")
+# https://patchwork.data-imaginist.com/articles/guides/layout.html
+
+ggsave(fig1abcd, filename = "graphs/Fig_sim_renewal1.jpeg"
+       )
+
+
+fig2ab <- fig_e + fig_f + plot_layout(ncol = 2, widths = unit(c(10, 4), c('cm', 'cm')), heights = unit(10, "cm")) +  
+ plot_layout(guides = "collect") +  plot_annotation(tag_levels = 'a') & theme(legend.position = "bottom")
+# https://patchwork.data-imaginist.com/articles/guides/layout.html
+
+ggsave(fig2ab, filename = "graphs/Fig_sim_renewal2.jpeg"
+       )
+
+fig_old <- fig_a + fig_b + fig_e + fig_f + fig_c + fig_d + guide_area() + plot_layout(ncol = 4, widths = unit(c(10, 4, 10, 4), c('cm', 'cm', 'cm', 'cm')), heights = unit(c(10, 4), c('cm', 'cm'))) +  
+ plot_layout(guides = "collect") +  plot_annotation(tag_levels = 'a') & theme(legend.position = "bottom", legend.box = "vertical")
+
+fig_new <- fig_a + fig_b + fig_c + fig_d + fig_e + fig_f + plot_layout(ncol = 2, nrow = 3, widths = unit(c(10, 4), c('cm', 'cm')), heights = unit(c(10, 4, 10), c('cm', 'cm', 'cm'))) +  
+ plot_layout(guides = "collect") +
+  plot_annotation(tag_levels = 'a', title = 'Generation method:               Deng                                                            epidemic') & theme(legend.position = "bottom", legend.box = "vertical")
+# https://patchwork.data-imaginist.com/articles/guides/layout.html
+
+ggsave(fig_new, filename = "graphs/Fig_sim_renewal.jpeg", width = 20, height = 36, units = "cm"
+       )
+
+#ggsave(fig_new, filename = "graphs/Fig_sim_renewal.jpeg", width = 8, height = 10)
+       
+
+
+
+#https://patchwork.data-imaginist.com/articles/guides/annotation.html
+
+```
+
+
+
+```{r Figures 1 and 2 NEW for n = 500}
+
+# bias in percentiles
+# a) generation method DengQin
+# b) generation method Leitzinger
+# with pi
+
+#load("Results_simulation_renewal_organized.RData")
+load("Results_simulation_renewal_organized_final_rounded_data.RData")
+
+results <- results %>% filter(method == "Deng")
+#results$approach <- factor(results$approach, levels = c("Deng x gamma", "Deng x lognormal", "Deng x Weibull"), labels = c("gamma", "lognormal", "Weibull")) %>% as.character()
+
+
+results$distribution_T <- recode(results$distribution_T, heavytail = "Burr")
+
+results$approach[results$approach == "Deng x lognormal"] <- "lognormal"
+results$approach[results$approach == "Deng x gamma"] <- "gamma"
+results$approach[results$approach == "Deng x Weibull"] <- "Weibull"
+
+results$approach_short <- factor(results$approach, levels = c("lognormal", "gamma", "Weibull"), labels = c("LN", "GA", "WB"))
+
+results$correct_assumption <- "z"
+results$distribution_T <- as.character(results$distribution_T)
+results$correct_assumption[results$distribution_T == results$approach] <- results$distribution_T[results$distribution_T == results$approach]
+
+results$correct_assumption <- factor(results$correct_assumption, levels = c("lognormal", "Weibull", "z"))
+
+selected_perc_a <- results %>% filter(generation_method == "DengQin", n == 500, estimation_method == "pi", method == "Deng",
+                               percentile_or_pi %in% c("0.5", "0.95", "0.99"),
+                               pi %in% c(0,0.2)
+                               )
+
+selected_perc_b <- results %>% filter(generation_method == "Leitzinger", n == 500, estimation_method == "pi", method == "Deng",
+                               percentile_or_pi %in% c("0.5", "0.95", "0.99"),
+                                pi == 0) # pi was not used in generation so remove the duplicates
+
+
+selected_c <- results %>% filter(generation_method == "DengQin", n == 500, method == "Deng", pi %in% c(0,0.2),
+                               percentile_or_pi == "pi"
+                               )
+
+selected_d <- results %>% filter(generation_method == "Leitzinger", n == 500, method == "Deng", pi == 0,
+                               percentile_or_pi == "pi"
+                               )
+
+
+selected_perc_e <- results %>% filter(generation_method == "DengQin", n == 500, estimation_method == "nopi", method == "Deng",
+                               percentile_or_pi %in% c("0.5", "0.95", "0.99"),
+                               pi %in% c(0,0.2)
+                               )
+
+selected_perc_f <- results %>% filter(generation_method == "Leitzinger", n == 500, estimation_method == "nopi", method == "Deng",
+                               percentile_or_pi %in% c("0.5", "0.95", "0.99"),
+                                pi == 0) # pi was not used in generation so remove the duplicates
+
+selected_perc_a$pi <- factor(selected_perc_a$pi, levels = c(0, 0.2), labels = c("pi: 0", " 0.2"))
+selected_perc_a$percentile_or_pi <- factor(selected_perc_a$percentile_or_pi, levels = c(0.5, 0.95, 0.99), labels = c("Percentile: 50*'%'", "95*'%'", "99*'%'"))
+
+draw_key_cust <- function(data, params, size) {
+  data$fill <- data$colour
+  draw_key_rect(data, params, size)
+}
+
+# a
+(fig_a <- ggplot(selected_perc_a) + geom_hline(yintercept = 0, linetype = "dashed") +  geom_linerange(aes(ymin = lower, ymax = upper, x = approach_short, col = distribution_T), position = position_dodge(width = 0.5)) + geom_point(key_glyph = "cust", aes(x = approach_short, y = bias_or_mean, col = distribution_T, fill = correct_assumption), shape = 23, position = position_dodge(width = 0.5)) +
+   scale_color_manual(values = cols_inct) +
+    scale_fill_manual(values = c(cols_inct[2:3], "white")) + guides(fill = "none") +
+  facet_grid(percentile_or_pi ~ pi, scales = "free_y",
+        labeller = label_parsed) + theme_bw() + theme(legend.position = "bottom") + guides(fill = "none") + labs(colour = "True distribution", x = "Mixture approach", y = "Bias (days)") + #theme(axis.title.x=element_blank(),
+      # axis.text.x=element_blank(),
+      # axis.ticks.x=element_blank()) +
+theme(strip.background = element_rect(fill=c("white"))))
+
+
+selected_perc_b$percentile_or_pi <- factor(selected_perc_b$percentile_or_pi, levels = c(0.5, 0.95, 0.99), labels = c("Percentile: 50*'%'", "95*'%'", "99*'%'"))
+
+# b
+(fig_b <- ggplot(selected_perc_b) + geom_hline(yintercept = 0, linetype = "dashed") + geom_linerange(aes(ymin = lower, ymax = upper, x = approach_short, col = distribution_T), position = position_dodge(width = 0.5)) + geom_point(key_glyph = "cust", aes(x = approach_short, y = bias_or_mean, col = distribution_T, fill = correct_assumption), shape = 23, position = position_dodge(width = 0.5)) +
+   scale_color_manual(values = cols_inct) +
+    scale_fill_manual(values = c(cols_inct[2:3], "white")) + guides(fill = "none") + facet_grid(percentile_or_pi ~ ., scales = "free_y", labeller = label_parsed) + theme_bw() + theme(legend.position = "bottom") + labs(colour = "True distribution", x = "Mixture approach", y = "Bias (days)")+ #theme(axis.title.x=element_blank(),
+      # axis.text.x=element_blank(),
+      # axis.ticks.x=element_blank()) +
+theme(strip.background = element_rect(fill=c("white"))))
+
+selected_c$pi_new <- factor(selected_c$pi, levels = c(0, 0.2), labels = c("pi: 0", " 0.2"))
+
+# c
+(fig_c <- ggplot(selected_c)+ geom_linerange(aes(ymin = lower, ymax = upper, x = approach_short, col = distribution_T), position = position_dodge(width = 0.5)) + geom_point(key_glyph = "cust", aes(x = approach_short, y = bias_or_mean, col = distribution_T, fill = correct_assumption), shape = 23, position = position_dodge(width = 0.5)) +
+    scale_color_manual(values = cols_inct) + scale_fill_manual(values = c(cols_inct[2:3], "white")) + facet_grid(. ~ pi_new, scales = "free_y", labeller = label_parsed) + geom_hline(aes(yintercept = pi), linetype = "dashed") +
+  theme_bw() + theme(legend.position = "bottom") + guides(col = "none", fill = "none") + labs(x = "Mixture approach", y = expression(hat(pi)))+ #theme(axis.title.x=element_blank(),
+#       axis.text.x=element_blank(),
+#       axis.ticks.x=element_blank()) +
+theme(strip.background = element_rect(fill=c("white"))))
+
+
+
+# d
+(fig_d <- ggplot(selected_d)  +  geom_linerange(aes(ymin = lower, ymax = upper, x = approach_short, col = distribution_T), position = position_dodge(width = 0.5)) + geom_point(key_glyph = "cust", aes(x = approach_short, y = bias_or_mean, col = distribution_T, fill = correct_assumption), shape = 23, position = position_dodge(width = 0.5)) + scale_fill_manual(values = c(cols_inct[2:3], "white")) +
+   scale_color_manual(values = cols_inct) + scale_y_continuous(limits = c(0,1))+
+  theme_bw() + theme(legend.position = "bottom") + guides(col = "none", fill = "none") + labs(x = "Mixture approach", y = expression(hat(pi)))+ #theme(axis.title.x=element_blank(),
+  #     axis.text.x=element_blank(),
+  #     axis.ticks.x=element_blank()) +
+theme(strip.background = element_rect(fill=c("white"))))
+
+selected_perc_e$pi <- factor(selected_perc_e$pi, levels = c(0, 0.2), labels = c("pi: 0", " 0.2"))
+selected_perc_e$percentile_or_pi <- factor(selected_perc_e$percentile_or_pi, levels = c(0.5, 0.95, 0.99), labels = c("Percentile: 50*'%'", "95*'%'", "99*'%'"))
+
+# e
+(fig_e <- ggplot(selected_perc_e) + geom_hline(yintercept = 0, linetype = "dashed") + geom_linerange(aes(ymin = lower, ymax = upper, x = approach_short, col = distribution_T), position = position_dodge(width = 0.5)) + geom_point(key_glyph = "cust", aes(x = approach_short, y = bias_or_mean, col = distribution_T, fill = correct_assumption), shape = 23, position = position_dodge(width = 0.5)) + 
+    scale_color_manual(values = cols_inct) +
+    scale_fill_manual(values = c(cols_inct[2:3], "white")) + facet_grid(percentile_or_pi ~ pi, scales = "free_y", labeller = label_parsed) + theme_bw() + theme(legend.position = "bottom") + guides(col = "none", fill = "none") + labs(colour = "True distribution", x = "Approach", y = "Bias (days)")+ #theme(axis.title.x=element_blank(),
+#       axis.text.x=element_blank(),
+#       axis.ticks.x=element_blank()) +
+theme(strip.background = element_rect(fill=c("white"))))
+
+#selected_perc_f$pi <- factor(selected_perc_f$pi, levels = c(0, 0.2), labels = c("pi: 0", " 0.2"))
+selected_perc_f$percentile_or_pi <- factor(selected_perc_f$percentile_or_pi, levels = c(0.5, 0.95, 0.99), labels = c("Percentile: 50*'%'", "95*'%'", "99*'%'"))
+
+
+
+# f
+(fig_f <- ggplot(selected_perc_f) + geom_hline(yintercept = 0, linetype = "dashed") +  geom_linerange(aes(ymin = lower, ymax = upper, x = approach_short, col = distribution_T), position = position_dodge(width = 0.5)) + geom_point(key_glyph = "cust", aes(x = approach_short, y = bias_or_mean, col = distribution_T, fill = correct_assumption), shape = 23, position = position_dodge(width = 0.5)) +
+    scale_color_manual(values = cols_inct) + scale_fill_manual(values = c(cols_inct[2:3], "white"))+ guides(fill = "none") +
+    facet_grid(percentile_or_pi ~ ., scales = "free_y", labeller = label_parsed) + theme_bw() + theme(legend.position = "bottom") + labs(colour = "True distribution", x = "Approach", y = "Bias (days)")+ #theme(axis.title.x=element_blank(),
+   #    axis.text.x=element_blank(),
+   #    axis.ticks.x=element_blank()) +
+theme(strip.background = element_rect(fill=c("white"))))
+
+
+######
+
+library(patchwork)
+
+fig1abcd <- fig_a + fig_b + fig_c + fig_d + plot_layout(ncol = 2, widths = unit(c(10, 4), c('cm', 'cm')), heights = unit(c(10, 4), c('cm', 'cm'))) +  
+ plot_layout(guides = "collect") +  plot_annotation(tag_levels = 'a') & theme(legend.position = "bottom")
+# https://patchwork.data-imaginist.com/articles/guides/layout.html
+
+#ggsave(fig1abcd, filename = "graphs/Fig_sim_renewal1.jpeg"
+     #  )
+
+
+fig2ab <- fig_e + fig_f + plot_layout(ncol = 2, widths = unit(c(10, 4), c('cm', 'cm')), heights = unit(10, "cm")) +  
+ plot_layout(guides = "collect") +  plot_annotation(tag_levels = 'a') & theme(legend.position = "bottom")
+# https://patchwork.data-imaginist.com/articles/guides/layout.html
+
+#ggsave(fig2ab, filename = "graphs/Fig_sim_renewal2.jpeg"
+     #  )
+
+fig_old <- fig_a + fig_b + fig_e + fig_f + fig_c + fig_d + guide_area() + plot_layout(ncol = 4, widths = unit(c(10, 4, 10, 4), c('cm', 'cm', 'cm', 'cm')), heights = unit(c(10, 4), c('cm', 'cm'))) +  
+ plot_layout(guides = "collect") +  plot_annotation(tag_levels = 'a') & theme(legend.position = "bottom", legend.box = "vertical")
+
+fig_new <- fig_a + fig_b + fig_c + fig_d + fig_e + fig_f + plot_layout(ncol = 2, nrow = 3, widths = unit(c(10, 4), c('cm', 'cm')), heights = unit(c(10, 4, 10), c('cm', 'cm', 'cm'))) +  
+ plot_layout(guides = "collect") +
+  plot_annotation(tag_levels = 'a', title = 'Generation method:               Deng                                                            epidemic') & theme(legend.position = "bottom", legend.box = "vertical")
+# https://patchwork.data-imaginist.com/articles/guides/layout.html
+
+ggsave(fig_new, filename = "graphs/Fig_sim_renewal_n500.jpeg", width = 20, height = 36, units = "cm"
+       )
+
+#ggsave(fig_new, filename = "graphs/Fig_sim_renewal.jpeg", width = 8, height = 10)
+       
+
+
+
+#https://patchwork.data-imaginist.com/articles/guides/annotation.html
+
+```
+
+
+```{r Figure Forward and backward time}
+
+# # Select the settings.
+n <- 1200
+pi <- 0
+distribution_T <- "Weibull"
+par1 <- 2.453 
+par2 <- 6.258
+
+#scenarios$par1 <- scenarios$par2 <- NA
+#scenarios$par1[which(scenarios$distribution_T == "lognormal")] <- 1.621 
+#scenarios$par2[which(scenarios$distribution_T == "lognormal")] <- 0.418
+#scenarios$par1[which(scenarios$distribution_T == "heavytail")] <- 8.5 # m
+#scenarios$par2[which(scenarios$distribution_T == "heavytail")] <- 2 # s, and f = 2
+#scenarios$par1[which(scenarios$distribution_T == "Weibull")] <- 2.453 
+#scenarios$par2[which(scenarios$distribution_T == "Weibull")] <- 6.258
+
+
+deng_fwbw_temp <- replicate(1000, Simulate_data_DengQin_unrounded(n = n, pi = pi,
+                            distribution = distribution_T,
+                            par1 = par1, par2 = par2,
+                            output = "both"))
+deng_fwbw <- data.frame(forward = unlist(deng_fwbw_temp[1,1:1000]), backward = unlist(deng_fwbw_temp[2,1:1000]))
+
+leitz_fwbw_temp <- replicate(1000, Simulate_data_Leitzinger_new_unrounded(daily_new_cases = 125, population_size = 11000000, leaveenter_per_day_prior19th = 245000,
+                                                  leave_per_day_from19thonwards = 490000,
+                                                   growth_rate = 0.14,
+                                                   distribution = distribution_T,
+                                                   par1 = par1, par2 = par2, output = "both"))
+
+leitz_fwbw <- data.frame(forward = unlist(leitz_fwbw_temp[1,1:1000]), backward = unlist(leitz_fwbw_temp[2,1:1000]))
+
+save(deng_fwbw, file = "Deng_example.RData")
+save(leitz_fwbw, file = "alternative_example.RData")
+load("alternative_example.RData")
+load("Deng_example.RData")
+
+deng_fwbw$generation_method <- "DengQin"
+leitz_fwbw$generation_method <- "Leitzinger"
+
+leitz_fwbw$forward <- ceiling(leitz_fwbw$forward)
+deng_fwbw$forward <- ceiling(deng_fwbw$forward)
+leitz_fwbw$backward <- ceiling(leitz_fwbw$backward + 0.5)
+deng_fwbw$backward <- ceiling(deng_fwbw$backward)
+
+leitz_fwbw$total <- length(leitz_fwbw)
+deng_fwbw$total <- length(deng_fwbw)
+
+dat_fwbw <- rbind(deng_fwbw, leitz_fwbw)
+
+dat_p <- rbind(data.frame(generation_method = dat_fwbw$generation_method, t = dat_fwbw$forward, type = "forward", total = dat_fwbw$total),
+      data.frame(generation_method = dat_fwbw$generation_method, t = dat_fwbw$backward, type = "backward", total = dat_fwbw$total)
+      )
+
+dat_p_counts <- dat_p %>% group_by(generation_method, type) %>% count(t, type)
+dat_p_counts$denom <- ifelse(dat_p_counts$generation_method == "DengQin", nrow(deng_fwbw), nrow(leitz_fwbw))
+dat_p_counts$prop <- dat_p_counts$n/dat_p_counts$denom
+
+
+
+table(dat_p$t, dat_p$type, dat_p$generation_method)
+
+dat_p_counts$generation_method_label <- ifelse(dat_p_counts$generation_method == "DengQin", "Deng, Qin", "epidemic curve")
+
+fig_bwfw <- ggplot(dat_p_counts, aes(x = t, y = prop, col = type)) + geom_point() +
+scale_color_manual(values = c( "grey", "black")) + 
+facet_grid(generation_method_label ~ .) + theme_bw() + theme(legend.position = "bottom") + geom_line(aes(linetype = type)) + scale_linetype_manual(values = c("dashed","dotted")) + scale_y_continuous(limits = c(0, 0.3)) +
+ theme(strip.background = element_rect(fill=c("white"))) + labs(col = "Time", y = "Proportion of observations (1000 data sets)", x = "Time (forward/backward) in days to travel") + guides(linetype = "none")
+
+
+
+ggsave(fig_bwfw, filename = "graphs/Fig_Forward_backward_time.jpeg", height = 5, width = 6)
+```
+
+

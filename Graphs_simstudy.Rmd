@@ -1,0 +1,431 @@
+---
+title: "Graphs for paper"
+output: html_document
+editor_options: 
+  chunk_output_type: console
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+
+library(ggplot2)
+library(dplyr)
+library(tidyr)
+library(RColorBrewer)
+library(rmutil) # Burr distribution
+library(gridExtra) # multiple graphs
+library(cowplot) # to extract legend
+library(ggpubr) # Combining plots
+library(ggh4x) # To solve the problem of facet_wrap and facet_grid with panel label placement. https://cran.r-project.org/web/packages/ggh4x/vignettes/Facets.html
+
+setwd("/Users/arntzenvh/Documents/Incubation and latent period Vietnam/incubation_and_latent_period")
+
+# Load data
+
+load("simulation/exposure_window_lengths_based_on_real_data.RData")
+
+load("simulation/exposure_windows/exposure_window_length_by_dataset.RData")
+
+```
+
+```{r Add reference numbers to labels data sets}
+
+unique(exp_windows$dataset)
+exp_windows$dataset <- recode(exp_windows$dataset, Backer = "Backer [7]", `Famulare/Lauer` = "Lauer [8]", `Linton` = "Linton [14]", `Tindale, Singapore` = "Tindale, Singapore [15]", 
+                              "Tindale, Tianjin" = "Tindale, Tianjin [15]")
+```
+
+
+```{r Choose colors and shapes}
+
+cols_inct <- brewer.pal(6, "Blues")[c(1,3,5)]
+cols_grey <- c(brewer.pal(9, "Greys")[c(1,3,5,7,9)], "black")
+cols_expm <- brewer.pal(9, "Set1")[c(9,5,2)]
+shapes_aprch <- 23
+
+```
+
+
+```{r Figure Incubation time distributions NEW}
+
+## Add small lines indicating the quantiles
+
+#display.brewer.all(n=NULL, type="all", select=NULL, exact.n=TRUE, 
+#colorblindFriendly=TRUE)
+cols <- cols_inct
+
+( Fig_distributions <- ggplot() + 
+  # Weibull
+  geom_line(aes(x = seq(0, 26, by= 0.1), y = dweibull(x = seq(0, 26, by= 0.1), shape = 2.453, scale =  6.258), linetype = "Weibull (5.4, 9.8, 11.7)")) + 
+  # lognormal
+   geom_line(aes(x = seq(0, 26, by= 0.1), y = dlnorm(x = seq(0, 26, by= 0.1), meanlog = 1.621, sdlog =  0.418), linetype = "lognormal (5.1, 10.1, 13.4)")) + 
+  # Burr
+  geom_line(aes(x = seq(0.01, 26, by= 0.1), y = dburr(y = seq(0.01, 26, by= 0.1), m = 8.5, s = 2, f = 2), linetype = "Burr (5.5, 15.8, 25.5)")) + 
+  
+ scale_color_manual(values = cols[1:3])+
+    
+    geom_segment(aes(x = qweibull(p = 0.5, shape = 2.453, scale =  6.258), xend = qweibull(p = 0.5, shape = 2.453, scale =  6.258), y = dweibull(x = qweibull(p = 0.5, shape = 2.453, scale =  6.258), shape = 2.453, scale =  6.258) - 0.01, yend = dweibull(x = qweibull(p = 0.5, shape = 2.453, scale =  6.258), shape = 2.453, scale =  6.258) + 0.01, linetype = "Weibull (5.4, 9.8, 11.7)")) +
+    geom_segment(aes(x = qweibull(p = 0.9, shape = 2.453, scale =  6.258), xend = qweibull(p = 0.90, shape = 2.453, scale =  6.258), y = dweibull(x = qweibull(p = 0.90, shape = 2.453, scale =  6.258), shape = 2.453, scale =  6.258) - 0.01, yend = dweibull(x = qweibull(p = 0.90, shape = 2.453, scale =  6.258), shape = 2.453, scale =  6.258) + 0.01, linetype = "Weibull (5.4, 9.8, 11.7)")) +
+    geom_segment(aes(x = qweibull(p = 0.95, shape = 2.453, scale =  6.258), xend = qweibull(p = 0.95, shape = 2.453, scale =  6.258), y = dweibull(x = qweibull(p = 0.95, shape = 2.453, scale =  6.258), shape = 2.453, scale =  6.258) - 0.01, yend = dweibull(x = qweibull(p = 0.95, shape = 2.453, scale =  6.258), shape = 2.453, scale =  6.258) + 0.01, linetype = "Weibull (5.4, 9.8, 11.7)")) +
+    
+    geom_segment(aes(x = qlnorm(p = 0.5, meanlog = 1.621, sdlog =  0.418), xend = qlnorm(p = 0.5, meanlog = 1.621, sdlog =  0.418), y = dlnorm(x = qlnorm(p = 0.5, meanlog = 1.621, sdlog =  0.418), meanlog = 1.621, sdlog =  0.418) - 0.01, yend = dlnorm(x = qlnorm(p = 0.5, meanlog = 1.621, sdlog =  0.418), meanlog = 1.621, sdlog =  0.418) + 0.01, linetype = "lognormal (5.1, 10.1, 13.4)")) +
+    geom_segment(aes(x = qlnorm(p = 0.9, meanlog = 1.621, sdlog =  0.418), xend = qlnorm(p = 0.90, meanlog = 1.621, sdlog =  0.418), y = dlnorm(x = qlnorm(p = 0.90, meanlog = 1.621, sdlog =  0.418), meanlog = 1.621, sdlog =  0.418) - 0.01, yend = dlnorm(x = qlnorm(p = 0.90, meanlog = 1.621, sdlog =  0.418), meanlog = 1.621, sdlog =  0.418) + 0.01, linetype = "lognormal (5.1, 10.1, 13.4)")) +
+    geom_segment(aes(x = qlnorm(p = 0.95, meanlog = 1.621, sdlog =  0.418), xend = qlnorm(p = 0.95, meanlog = 1.621, sdlog =  0.418), y = dlnorm(x = qlnorm(p = 0.95, meanlog = 1.621, sdlog =  0.418), meanlog = 1.621, sdlog =  0.418) - 0.01, yend = dlnorm(x = qlnorm(p = 0.95, meanlog = 1.621, sdlog =  0.418), meanlog = 1.621, sdlog =  0.418) + 0.01, linetype = "lognormal (5.1, 10.1, 13.4)")) +
+    
+    geom_segment(aes(x = qburr(p = 0.5, m = 8.5, s = 2, f = 2), xend = qburr(p = 0.5, m = 8.5, s = 2, f = 2), y = dburr(y = qburr(p = 0.5, m = 8.5, s = 2, f = 2), m = 8.5, s = 2, f = 2) - 0.01, yend = dburr(y = qburr(p = 0.5, m = 8.5, s = 2, f = 2), m = 8.5, s = 2, f = 2) + 0.01, linetype = "Burr (5.5, 15.8, 25.5)")) +
+    geom_segment(aes(x = qburr(p = 0.9, m = 8.5, s = 2, f = 2), xend = qburr(p = 0.90, m = 8.5, s = 2, f = 2), y = dburr(y = qburr(p = 0.90, m = 8.5, s = 2, f = 2), m = 8.5, s = 2, f = 2) - 0.01, yend = dburr(y = qburr(p = 0.90, m = 8.5, s = 2, f = 2), m = 8.5, s = 2, f = 2) + 0.01, linetype = "Burr (5.5, 15.8, 25.5)")) +
+    geom_segment(aes(x = qburr(p = 0.95, m = 8.5, s = 2, f = 2), xend = qburr(p = 0.95, m = 8.5, s = 2, f = 2), y = dburr(y = qburr(p = 0.95, m = 8.5, s = 2, f = 2), m = 8.5, s = 2, f = 2) - 0.01, yend = dburr(y = qburr(p = 0.95, m = 8.5, s = 2, f = 2), m = 8.5, s = 2, f = 2) + 0.01, linetype = "Burr (5.5, 15.8, 25.5)")) +
+
+  # Layout
+  theme(panel.grid.major = element_blank(), panel.grid.minor = element_blank(), panel.background = element_rect(fill = "white",colour = "white",  size = 0.5, linetype = "solid"), legend.position = "right") + labs(x = "Incubation time (days since infection)", y = "Probability", linetype = "Distribution (50%, 95% and 99% percentile)", fill = "") + guides(linetype = "none") +
+  theme(axis.line = element_line(size = 0.3, colour = "black", linetype=1), legend.position = "bottom",
+        legend.title = element_text(size=8), legend.text = element_text(size=7)) + guides(linetype = guide_legend(nrow=3,byrow=TRUE)) + theme(legend.key = element_rect(colour = NA, fill = NA))
+)
+
+#qburr(p = c(0.5, 0.95, 0.99), m = 8.5, s = 2, f = 2)
+# 5.5, 15.8, 25.5
+#qlnorm(p = c(0.5, 0.95, 0.99), meanlog = 1.621, sdlog =  0.418)
+# 5.1, 10.1, 13.4
+#qweibull(p = c(0.5, 0.95, 0.99), shape = 2.453, scale =  6.258)
+# 5.4, 9.8, 11.7
+
+ggsave("simulation/graphs/Figure_Generated_incubation_time_distributions_new.pdf", width = 8, height = 4)
+
+```
+
+
+Combine the figures exposure windows and infection moment
+
+```{r Figure Exposure windows}
+#remotes::install_github("coolbutuseless/ggpattern")
+#library(ggpattern) # Unfortunately no option for histogram/stacked bar plot
+
+cols <- cols_grey 
+
+#density=5:9, angle=seq(40, 90, 10)
+
+#dat <- data.frame(length = lengths)
+( Fig_exp_windows <- ggplot(exp_windows[exp_windows$length<31,]) + geom_histogram(aes(x=length, fill = dataset), color = "black") + 
+  labs(x = "Exposure window width (days)", y = "Number of observations", fill = "Data set") + scale_fill_manual(values = cols[1:5]) + 
+theme(panel.grid.major = element_blank(), panel.grid.minor = element_blank(), panel.background = element_rect(fill = "white",colour = "white",  size = 0.5, linetype = "solid")) +
+  scale_x_continuous(expand = c(0, 0), limits = c(0,NA)) + 
+  scale_y_continuous(expand = c(0, 0), limits = c(0, 30)) + guides(linetype = "none") +
+  theme(axis.line = element_line(size = 0.3, colour = "black", linetype=1), legend.position = "bottom",
+        legend.key.size = unit(0.3, 'cm'), #change legend key size
+        legend.key.height = unit(0.3, 'cm'), #change legend key height
+        legend.key.width = unit(0.3, 'cm'), #change legend key width
+        legend.title = element_text(size=8), #change legend title font size
+        legend.text = element_text(size=7)) + guides(fill = guide_legend(nrow=2,byrow=TRUE))
+)
+
+ggsave("simulation/graphs/Figure_exposure_window_lengths.pdf", width = 6, height = 4)
+
+```
+
+
+
+```{r Figure Generated moment of infection}
+
+L0 <- 0; L1 <- 10
+
+# 1. Exponential growth
+g = 0.14  # a starting value; g growth factor
+
+x <- runif(1000000, min = exp(0.14*(L0)), max = exp(0.14*(L1)))  # draw from uniform, 
+    # for truncation: https://blogs.sas.com/content/iml/2013/07/22/the-inverse-cdf-method.html
+exp_growth <- (1/g)*log(x) # inverse of cumulative incidence
+    #y = -log(1-x)  # inverse exponential
+    #Li <- L1 - y
+
+# 2. Constant risk
+unif <- runif(1000000, min = 0, max = L1 - L0)  # draw from uniform
+
+# 3a. Household transmission - old
+#x <- runif(1000000, min = pexp(L0), max = pexp(L1)) # Truncation by including CDF
+#household <- -log(1-x) # inverse cdf
+
+# 3b. Household transmission - new
+# p(1-p)^t
+p <- 0.2
+x <- runif(1000000, min = (p*(1-p)^L0) / log(1-p), max = (p*(1-p)^L1) / log(1-p)) # Truncation by including CDF
+household <- log(x*log(1-p)/p) / log(1-p) # inverse cdf
+
+library(RColorBrewer)
+cols <- cols_expm
+
+temp <- data.frame(`infection time (Li)` = exp_growth, assumption = "exponential growth") %>% bind_rows(data.frame(`infection time (Li)` = unif, assumption = "constant risk") ) %>% bind_rows(data.frame(`infection time (Li)` = household, assumption = "household transmission") )
+colnames(temp)[1] <- "Infection time (day on window)"
+
+temp$`Infection time (day on window)` <- cut(temp$`Infection time (day on window)`, breaks = 50)
+
+levels(temp$`Infection time (day on window)`) <- seq(0.1, 9.9, 0.2)
+temp$`Infection time (day on window)` <- as.numeric(as.character(temp$`Infection time (day on window)`))
+
+tab_inftime <- table(temp$`Infection time (day on window)`, temp$assumption)
+tab_inftime <- as.data.frame(tab_inftime)
+colnames(tab_inftime) <- c("Infection time (day on window)", "assumption", "n")
+#tab_inftime$`Infection time (day on window)` <- as.numeric(rownames(tab_inftime))
+
+# 
+# ( Fig_infection_moment <- ggplot(temp, aes(x = `Infection time (day on window)`)) + geom_histogram(aes(fill = assumption), binwidth = 0.2, position = "identity", alpha = 0.7, col = "black") + scale_x_continuous(limits = c(0,10)) + ylab("") + scale_fill_manual(values = cols) + theme(axis.ticks.y = element_blank(), axis.text.y = element_blank()) + labs(fill = "Assumption") + theme(panel.grid.major = element_blank(), panel.grid.minor = element_blank(), panel.background = element_rect(fill = "white",colour = "white",  size = 0.5, linetype = "solid")) +
+#   theme(axis.line.x = element_line(size = 0.3, colour = "black", linetype=1), legend.position = "bottom", 
+#         legend.key.size = unit(0.3, 'cm'), #change legend key size
+#         legend.key.height = unit(0.3, 'cm'), #change legend key height
+#         legend.key.width = unit(0.3, 'cm'), #change legend key width
+#         legend.title = element_text(size=9), #change legend title font size
+#         legend.text = element_text(size=7),
+#           axis.ticks.x = element_blank(),
+#         axis.text.x = element_blank()) + scale_x_continuous(expand = c(0, 0), limits = c(0,10)) +
+#   guides(fill = guide_legend(nrow=2,byrow=TRUE))#+ 
+#  # scale_y_continuous(expand = c(0, 0), limits = c(0, 40000))
+# )
+
+tab_inftime$`Infection time (day on window)` <- as.numeric(as.character(tab_inftime$`Infection time (day on window)`))
+
+( Fig_infection_moment <- ggplot(tab_inftime, aes(x = `Infection time (day on window)`)) + geom_area(aes(y = n, col = assumption, fill = assumption), #binwidth = 0.2, 
+                          #    adjust = 1, 
+        position = "identity", alpha = 0.7, col = "black"
+        ) + scale_x_continuous(limits = c(0,10)) + ylab("") + scale_fill_manual(values = cols) + theme(axis.ticks.y = element_blank(), axis.text.y = element_blank()) + labs(fill = "Assumption") + theme(panel.grid.major = element_blank(), panel.grid.minor = element_blank(), panel.background = element_rect(fill = "white",colour = "white",  size = 0.5, linetype = "solid")) +
+  theme(axis.line.x = element_line(size = 0.3, colour = "black", linetype=1), legend.position = "bottom", 
+        legend.key.size = unit(0.3, 'cm'), #change legend key size
+        legend.key.height = unit(0.3, 'cm'), #change legend key height
+        legend.key.width = unit(0.3, 'cm'), #change legend key width
+        legend.title = element_text(size=8), #change legend title font size
+        legend.text = element_text(size=7),
+          axis.ticks.x = element_blank(),
+        axis.text.x = element_blank()) + scale_x_continuous(expand = c(0, 0), limits = c(0,10)) +
+  guides(fill = guide_legend(nrow=2,byrow=TRUE))#+ 
+ # scale_y_continuous(expand = c(0, 0), limits = c(0, 40000))
+)
+
+
+#Fig_infection_moment
+
+
+ggsave("simulation/graphs/Figure_generated_infection_moment.pdf", width = 6, height = 4)
+
+```
+
+
+
+```{r Fig Panels exposure window and infection moment}
+
+
+library(patchwork)
+combnd3 <- (Fig_exp_windows + Fig_infection_moment)/Fig_distributions + 
+                                      #  widths = unit(c(5, 5, 5), c('cm', 'cm', "cm")), heights = unit(c(2,2,2), c("cm", "cm", "cm"))#, guides = "collect"
+                                          plot_annotation(tag_levels = 'a')# & theme(legend.position = "bottom")
+ggsave("simulation/graphs/Fig_Sim_setup.jpeg", combnd3, width = 8, height = 8)
+
+```
+
+
+
+# Simulation results
+
+```{r}
+#library(readxl)
+#results <- read_xlsx("simulation/results/Results_13_11.xlsx", col_types = c("numeric", "numeric", "text", "text", "text", "text", "numeric", "text", 
+#"numeric", "numeric", "numeric", "numeric",
+#"numeric", "numeric", "numeric", "numeric", "numeric", "numeric"))
+
+load("simulation/results/final/Results_run_Tue Dec 21 16:59:36 2021.RData")
+results1 <- results
+load("simulation/results/final/Results_run_Tue Dec 21 15:02:06 2021.RData")
+results2 <- results
+load("simulation/results/final/Results_run_Sun Dec 26 05:33:52 2021.RData")
+results3 <- results
+load("~/Documents/Incubation and latent period Vietnam/incubation_and_latent_period/simulation/results/final/Results_3hr_PGM_up_to_Tue Feb  1 13:58:20 2022.RData")
+results4 <- results
+
+results <- rbind(results1, results2, results3, results4)
+
+# SELECT DATA SET SIZE HERE
+results <- results %>% filter(approach %in% c("MLE_flexsurv x lognormal", "MLE_flexsurv x Weibull", "MLE_flexsurv x gamma", "NPMLE", "PGM"), n == 500)
+
+results$approach[results$approach == "MLE_flexsurv x lognormal"] <- "lognormal"
+results$approach[results$approach == "MLE_flexsurv x gamma"] <- "gamma"
+results$approach[results$approach == "MLE_flexsurv x Weibull"] <- "Weibull"
+
+results$correct_assumption <- "z"
+results$correct_assumption[results$distribution_T == results$approach] <- results$distribution_T[results$distribution_T == results$approach]
+
+results$approach <- factor(results$approach, levels = c("gamma", "lognormal", "Weibull", "NPMLE", "PGM"))
+
+results$exposure_dist <- factor(results$exposure_dist, levels = c("unif", "exp_growth", "exp_household"), labels = c("constant", "exponential growth", "household transmission"))
+
+results$windowlength <- factor(results$windowlength, levels = c("standard", "double", "squared"))
+
+results$approach_short <- factor(results$approach, levels = c("gamma", "lognormal", "Weibull", "NPMLE", "PGM"), labels = c("GA", "LN", "WB", "NP", "PG"))
+```
+
+```{r Table}
+
+colnames(results)
+
+results1 <- results %>% select(percentiles, n, exposure_dist, distribution_T, approach, windowlength, coverage) %>% spread(percentiles, coverage)
+colnames(results1)[6:10] <- paste(colnames(results1)[6:10], "_coverage", sep = "")
+
+results2 <- results %>% select(percentiles, n, exposure_dist, distribution_T, approach, windowlength, 
+                   bias) %>% spread(percentiles, bias)
+colnames(results2)[6:10] <- paste(colnames(results2)[6:10], "_bias", sep = "")
+
+results3 <- results %>% select(percentiles, n, exposure_dist, distribution_T, approach, windowlength, 
+                   bias_q25) %>% spread(percentiles, bias_q25)
+colnames(results3)[6:10] <- paste(colnames(results3)[6:10], "_bias_q25", sep = "")
+
+results4 <- results %>% select(percentiles, n, exposure_dist, distribution_T, approach, windowlength, 
+                   bias_q75) %>% spread(percentiles, bias_q75)
+colnames(results4)[6:10] <- paste(colnames(results4)[6:10], "_bias_q75", sep = "")
+
+results5 <- results %>% select(percentiles, n, exposure_dist, distribution_T, approach, windowlength, 
+                   mean_CI_length) %>% spread(percentiles, mean_CI_length)
+colnames(results5)[6:10] <- paste(colnames(results5)[6:10], "_mean_CI_length", sep = "")
+
+results6 <- results %>% select(percentiles, n, exposure_dist, distribution_T, approach, windowlength, 
+                   CI_q25) %>% spread(percentiles, CI_q25)
+colnames(results6)[6:10] <- paste(colnames(results6)[6:10], "_CI_q25", sep = "")
+
+results7 <- results %>% select(percentiles, n, exposure_dist, distribution_T, approach, windowlength, 
+                   CI_q75) %>% spread(percentiles, CI_q75)
+colnames(results7)[6:10] <- paste(colnames(results7)[6:10], "_CI_q75", sep = "")
+
+results8 <- results %>% select(percentiles, n, exposure_dist, distribution_T, approach, windowlength, 
+                  invalid) %>% spread(percentiles, invalid)
+colnames(results8)[6:10] <- paste(colnames(results8)[6:10], "_invalid", sep = "")
+
+table_results <- results1 %>% left_join(results2) %>% left_join(results3) %>% left_join(results4) %>% left_join(results5) %>% left_join(results6) %>% left_join(results7) %>% left_join(results8) 
+
+#TABLES: round to two digits. Use Greek letter pi. Leave out Qin. Leave out variability of CI length
+#Order E1, g, approch
+table_results[,6:45] <- round(table_results[,6:45],2)
+
+table_results <- arrange(table_results, distribution_T, windowlength, exposure_dist)
+
+colnames(table_results)
+
+table_results <- table_results[, c("n","distribution_T", "approach", "exposure_dist", "windowlength", "0.5_bias", "0.5_bias_q25", "0.5_bias_q75", "0.5_mean_CI_length", "0.5_coverage", "0.9_bias", "0.9_bias_q25", "0.9_bias_q75", "0.9_mean_CI_length", "0.9_coverage",
+"0.95_bias", "0.95_bias_q25", "0.95_bias_q75", "0.95_mean_CI_length", "0.95_coverage",
+"0.975_bias", "0.975_bias_q25", "0.975_bias_q75", "0.975_mean_CI_length", "0.975_coverage",
+"0.99_bias", "0.99_bias_q25", "0.99_bias_q75", "0.99_mean_CI_length", "0.99_coverage", "0.9_invalid")]
+
+save(table_results, file = "simulation/results/final/Table_paper_n500.RData")
+
+copy_to_clipboard(table_results)
+```
+
+
+```{r NEW Assumption 1. parametric distribution}
+
+cols <- cols_inct
+
+# In panels: distributions of T
+
+results$percentiles <- as.factor(results$percentiles)
+
+
+selected <- results[which(results$approach %in% c("lognormal", "Weibull", "gamma", "NPMLE","PGM") == TRUE),] %>% filter(percentiles %in% c(0.5, 0.95, 0.99)) %>% filter(exposure_dist == "constant") %>% filter(windowlength == "standard") %>% filter(distribution_T %in% c("lognormal", "Weibull", "heavytail"))
+
+
+# BIAS
+fig_bias <- ggplot(selected) + geom_hline(yintercept = 0, linetype = "dashed")  + geom_linerange(aes(ymin = bias_q25, ymax =  bias_q75, x = approach_short, col = distribution_T), position = position_dodge(width = 0.5)) + geom_point(aes(x = approach_short, y = bias, col = distribution_T, fill = correct_assumption), shape = 23, position = position_dodge(width = 0.5), size = 2) + facet_grid2(percentiles ~ distribution_T, 
+#scales = "free_y", labeller = labeller(
+scales = "free", independent = "y", space = "free_x", labeller = labeller(
+     #   windowlength = c("standard" = "Window length: standard", "double" = "doubled", "squared" = "squared"),
+   distribution_T = c("heavytail" = "True distribution: Burr", "lognormal" = "lognormal", "Weibull" = "Weibull"),
+        percentiles = c("0.5" = "Percentile: 50%", "0.95"  = "95%", "0.99" = "99%"))) + theme_bw() + theme(legend.position = "bottom") + guides(col = "none", fill = "none") + labs(x = "Approach", y = "Bias (days)") + scale_fill_manual(values = c("black", "black", "white")) + scale_color_manual(values = c("black", "black", "black")) + #theme(axis.title.x=element_blank(),
+#        axis.text.x=element_blank(),
+#        axis.ticks.x=element_blank()) +
+theme(strip.background = element_rect(fill=c("white")))
+
+# COVERAGE
+fig_cov <- ggplot(selected) + geom_hline(yintercept = 0.95, linetype = "dashed")  + geom_point(aes(x = approach_short, y = coverage, col = distribution_T, fill = correct_assumption), shape = 23, position = position_dodge(width = 0.5), size = 2) + facet_grid2(percentiles ~ distribution_T, scales = "free", independent = "y", space = "free_x",
+# to change back: free_y, remove independent and space
+ labeller = labeller(
+     #   windowlength = c("standard" = "Window length: standard", "double" = "doubled", "squared" = "squared"),
+        distribution_T = c("heavytail" = "True distribution: Burr", "lognormal" = "lognormal", "Weibull" = "Weibull"),
+        percentiles = c("0.5" = "Percentile: 50%", "0.95"  = "95%", "0.99" = "99%"))) + theme_bw() + theme(legend.position = "bottom") + guides(col = "none", fill = "none") + labs(x = "Approach", y = "Coverage (proportion)") + scale_fill_manual(values = c("black", "black", "white")) + scale_color_manual(values = c("black", "black", "black")) + #theme(axis.title.x=element_blank(),
+#        axis.text.x=element_blank(),
+#        axis.ticks.x=element_blank())
+scale_y_continuous(limits = c(0, 1)) +
+theme(strip.background = element_rect(fill=c("white"))) 
+
+
+
+library(patchwork)
+
+fig_assumption1 <- fig_bias + fig_cov +
+  plot_layout(nrow = 2, heights = c(5,5), guides = "collect") + plot_annotation(tag_levels = 'a') & theme(legend.position = "bottom")
+
+ggsave(fig_assumption1, filename = "simulation/graphs/Fig_Assumption1_n500.jpeg", width = 8, height = 10
+       )
+
+```
+
+```{r NEW Assumption 2. uniform distribution}
+
+# Only Weibull
+# Panels: standard, double, squared
+# colors: generated infection risk
+
+cols <- cols_expm
+
+# In panels: distributions of T
+
+results$percentiles <- as.factor(results$percentiles)
+#load("simualtion/uniform_results.RData")
+
+selected <- results[which(results$approach %in% c(#"lognormal", 
+  "Weibull",# "gamma", 
+ # "NPMLE"#,
+  "PGM"
+ ) == TRUE),] %>% filter(percentiles %in% c(0.5, 0.95, 0.99)) %>% filter(distribution_T == "Weibull")
+
+# BIAS
+fig_bias <- ggplot(selected, aes(shape = approach)) + geom_hline(yintercept = 0, linetype = "dashed")  + geom_linerange(aes(ymin = bias_q25, ymax =  bias_q75, x = windowlength, col = exposure_dist), position = position_dodge(width = 0.5)) + geom_point(aes(x = windowlength, y = bias, fill = exposure_dist ), col = "black", position = position_dodge(width = 0.5), size = 2)  + scale_fill_manual(values = c("black", "white", "white")) +
+  facet_grid(percentiles ~ exposure_dist, scales = "free_y",                                         labeller = labeller(
+     #   windowlength = c("standard" = "Window length: standard", "double" = "doubled", "squared" = "squared"),
+      exposure_dist = c("constant" = "True infection risk: constant", "exponential growth" = "exponential growth", "household transmission" = "household transmission"),
+        percentiles = c("0.5" = "Percentile: 50%", "0.95" = "95%", "0.99" = "99%"))
+    ) +                                                                                          # labeller = label_parsed   for pi                                                                                                ) 
+  theme_bw() + theme(legend.position = "bottom") + guides(fill = "none", col = "none") + labs(x = "Exposure window width", y = "Bias (days)", col = "Infection risk distribution", shape = "Approach") +
+  scale_color_manual(values = c("black", "black", "black")) + scale_shape_manual(values = c(23, 21)) + #theme(
+    #axis.title.x=element_blank(),
+    #   axis.text.x=element_blank(),
+    #   axis.ticks.x=element_blank()) +
+theme(strip.background = element_rect(fill=c("white"))) +
+  #guides(col = guide_legend(nrow=2,byrow=TRUE), shape = guide_legend(nrow=2,byrow=TRUE))  
+  theme(legend.box = "vertical")
+
+# COVERAGE
+fig_cov <- ggplot(selected, aes(shape = approach)) + geom_hline(yintercept = 0.95, linetype = "dashed")   + geom_point(aes(x = windowlength, y = coverage, fill = exposure_dist ), col = "black", position = position_dodge(width = 0.5), size = 2)  + scale_fill_manual(values = c("black", "white", "white")) +
+  facet_grid2(percentiles ~ exposure_dist, scales = "free", independent = "y", space = "free_x",                                        labeller = labeller(
+     exposure_dist = c("constant" = "True infection risk: constant", "exponential growth" = "exponential growth", "household transmission" = "household transmission"),
+
+     #   windowlength = c("standard" = "Window length: standard", "double" = "doubled", "squared" = "squared"),
+        percentiles = c("0.5" = "Percentile: 50%", "0.95" = "95%", "0.99" = "99%"))
+    ) +                                                                                          # labeller = label_parsed   for pi                                                                                                ) 
+  theme_bw() + theme(legend.position = "bottom") + guides(fill = "none", col = "none") + labs(x = "Exposure window width", y = "Coverage (proportion)", col = "Infection risk distribution", shape = "Approach") +
+  scale_color_manual(values = c("black", "black", "black")) + scale_shape_manual(values = c(23, 21)) + scale_y_continuous(limits = c(0,1)) +  #theme(
+    #axis.title.x=element_blank(),
+    #   axis.text.x=element_blank(),
+    #   axis.ticks.x=element_blank()) +
+theme(strip.background = element_rect(fill=c("white"))) +
+  #guides(col = guide_legend(nrow=2,byrow=TRUE), shape = guide_legend(nrow=2,byrow=TRUE))  
+  theme(legend.box = "vertical")
+
+library(patchwork)
+
+fig_assumption2 <- fig_bias + fig_cov +
+  plot_layout(nrow = 2, heights = c(5,5), guides = "collect") +  plot_annotation(tag_levels = 'a') & theme(legend.position = "bottom", legend.box = "vertical")
+
+ggsave(fig_assumption2, filename = "simulation/graphs/Fig_Assumption2_n500.jpeg", width = 8, height = 10
+       )
+
+```
+
+
+
+
+
+

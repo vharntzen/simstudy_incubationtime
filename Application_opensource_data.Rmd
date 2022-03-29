@@ -1,0 +1,411 @@
+---
+title: "Application_for_paper"
+output: html_document
+editor_options: 
+  chunk_output_type: console
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+
+```{r Load data}
+
+# Set working directory
+setwd("/Users/arntzenvh/Documents/Incubation and latent period Vietnam/incubation_and_latent_period/application")
+
+# Load data
+load("opensource_data_combined_Dec2021.RData")
+
+# Load functions and packages
+source("fun_estimate_single_interval_censored.R")
+library(ggpubr) # Combining plots
+library(dplyr)
+library(tidyr)
+library(ggplot2)
+library(RColorBrewer)
+library(ggh4x) # To solve the problem of facet_wrap and facet_grid with panel label placement. https://cran.r-project.org/web/packages/ggh4x/vignettes/Facets.html
+
+```
+
+# Preparation
+
+Check that L1 <= S
+
+```{r Preparation}
+
+# 906 in total
+dat_all <- combnd_data %>% drop_na(S) # 70 missing symptom onsets --> 836
+
+# If L1 > S, set L1 to S.
+dat_all[which( (dat_all$L1 > dat_all$S) == TRUE),]$L1 <- dat_all[which( (dat_all$L1 > dat_all$S) == TRUE),]$S
+
+# If L1 is missing but L0 is present, set L1 to S (8 occurrences)
+dat_all[which(is.na(dat_all$L1) & !is.na(dat_all$L0)),]$L1 <- dat_all[which(is.na(dat_all$L1) & !is.na(dat_all$L0)),]$S
+# If L1 is missing, nor L0 is present, set L1 to S (75 occurrences)
+dat_all[which(is.na(dat_all$L1) & is.na(dat_all$L0)),]$L1 <- dat_all[which(is.na(dat_all$L1) & is.na(dat_all$L0)),]$S
+
+# Per type
+dat_all$type <- NA
+dat_all$type[which(dat_all$L0 == dat_all$L1)] <- "exact"
+dat_all$type[which( (is.na(dat_all$L0) == TRUE ) & ((dat_all$L1 == dat_all$S) == TRUE) )] <- "leftcensored - no information"
+dat_all$type[which( (is.na(dat_all$L0) == TRUE ) & ((dat_all$L1 < dat_all$S) == TRUE) )] <- "leftcensored - with information"
+
+# Window lengths
+dat_all$window_length <- dat_all$L1 - dat_all$L0
+dat_all$window_length <- as.numeric(dat_all$window_length)
+#summary(dat_all$window_length) # Median is 4
+
+dat_all$type[dat_all$window_length > 4] <- "interval_long"
+dat_all$type[dat_all$window_length <= 4 & dat_all$window_length!=0] <- "interval_short"
+
+# Plot observation types per data set
+dat_all$type <- factor(dat_all$type, levels = rev(c("exact", "interval_short", "interval_long", "leftcensored - with information", "leftcensored - no information")))
+
+cols_datatypes <- brewer.pal(6, "BuPu")[6:2]
+
+dat_all$type_new <- factor(dat_all$type, levels = rev(c("exact", "interval_short", "interval_long", "leftcensored - with information", "leftcensored - no information")), labels = rev(c("exact", "interval (short)", "interval (long)", "left censored (info)", "left censored (no info)")))
+
+dat_all$dataset_new <- factor(dat_all$dataset, levels = c("TindaleTianjin","Backer"   , "FamulareLauer","Linton", "TindaleSingapore","Yang"), labels =c("Tindale, Tianjin [15]","Backer [7]", "Lauer [8]", "Linton [14]",          
+"Tindale, Singapore [15]","Yang [21]"))
+
+fig_datasets <- ggplot(dat_all) + geom_bar(aes(x = dataset_new, fill = type_new), col = "black", position = "stack") +
+  scale_fill_manual(values = cols_datatypes[5:1]) + labs(fill = "Type of observation", x = "Data set (first author)", y = "Count") +theme_bw() + theme(axis.text.x = element_text(size = 10, angle = 45, vjust = 1, hjust=1)) + theme(panel.grid.major.x = element_blank())
+
+# Recolor: give non-informative left censored a grey color
+ggsave("graphs/Figure_Types_of_observations.jpeg",fig_datasets)
+
+dat_temp <- dat_all
+
+dat_temp$L0 <- as.character(dat_temp$L0)
+dat_temp[which(dat_temp$type %in% c("leftcensored - no information", "leftcensored - with information")),]$L0 <- "2019-12-01 01:00:00 UTC" # Set to beginning of Dec 2019
+
+dat_temp$S <- dat_temp$S %>% as.POSIXct(format = "%Y-%m-%d UTC")
+dat_temp$LO <- dat_temp$L0 %>% as.POSIXct(format = "%Y-%m-%d UTC", origin = "1970-01-01 00:00.00 UTC")
+dat_temp$L1 <- dat_temp$L1 %>% as.POSIXct(format = "%Y-%m-%d UTC", origin = "1970-01-01 00:00.00 UTC")
+
+
+dat_complete <- dat_temp %>% mutate(L1 = difftime(L1, L0, unit = "days") %>% as.numeric() %>% round(),
+                            R0 = difftime(S, L0, unit = "days") %>% as.numeric() %>% round(), L0 = 0, R1 = R0) %>% select(L0, L1, R0, R1, dataset, type) #  L0, L1, R0, R1
+
+dat_complete <- dat_complete %>% mutate(Tmin = R0 - L1,
+                   Tmax = R0 - L0)
+
+# Subsets
+
+##### With Yang
+
+# 1. Exactly observed
+set1 <- dat_complete %>% filter(type == "exact")
+# 2. Exactly observed + short windows
+set2 <- dat_complete %>% filter(type %in% c("exact", 
+  "interval_short"))
+# 3. Exactly observed + short windows + long windows + left-censored (with arbitrary start date) with info
+set3 <- dat_complete %>% filter(type %in% c("exact", 
+  "interval_short", "interval_long", "leftcensored - with information"))
+# 4. Exactly observed + short windows + long windows + left-censored (with arbitrary start date) with and without information
+set4 <- dat_complete %>% filter(type %in% c("exact", 
+  "interval_short", "interval_long", "leftcensored - with information", "leftcensored - no information"))
+
+##### Without Yang
+
+dat_withoutyang <- dat_complete %>% filter(dataset != "Yang")
+
+# 1. Exactly observed
+set1_withoutyang <- dat_withoutyang  %>% filter(type == "exact")
+# 2. Exactly observed + short windows
+set2_withoutyang <- dat_withoutyang  %>% filter(type %in% c("exact", "interval_short"))
+# 3. Exactly observed + short windows + long windows + left-censored (with arbitrary start date) with info
+set3_withoutyang <- dat_withoutyang  %>% filter(type %in% c("exact", "interval_short", "interval_long", "leftcensored - with information"))
+# 4. Exactly observed + short windows + long windows + left-censored (with arbitrary start date) with and without information
+set4_withoutyang <- dat_withoutyang  %>% filter(type %in% c("exact", "interval_short", "interval_long", "leftcensored - with information", "leftcensored - no information"))
+
+save(set1, file = "data/Set1.RData")
+save(set2, file = "data/Set2.RData")
+save(set3, file = "data/Set3.RData")
+save(set4, file = "data/Set4.RData")
+
+table(set4$type)
+
+32
+32 + (216)
+32 + 216 + (185 + 238)
+32 + 216 + 185 + 238 + (165)
+```
+
+# Plots of data
+
+```{r Figure Timeline}
+
+# Obtain time differences
+dat_p <- dat_all %>% mutate(ELnew = difftime(dat_all$L0, dat_all$L1, units = "days"),
+                   ERnew = 0, 
+                   Emid = (ELnew + ERnew)/2, 
+                   Snew = difftime(dat_all$S, dat_all$L1, units = "days"),
+                   E_length = difftime(dat_all$L1, dat_all$L0, units = "days"),
+                   ER_S_length = difftime(dat_all$S, dat_all$L1, units = "days"))
+
+# Based on code by Reich et al., 2009
+
+dat_p <- dat_p[order(dat_p$E_length, -dat_p$ER_S_length),]
+dat_p$id <- 1:nrow(dat_p)
+
+# Sort on window length
+#dat_sum$id <- order(dat_sum$E_length)
+
+#summary(dat_sum$ER - dat_sum$EL) # median is 4, 75th percentile is 7
+
+border_smalllarge <- dat_p$id[which.max(dat_p$E_length > 4)] # 202
+border_exact <- dat_p$id[which.max(dat_p$E_length > 0)] # 33
+border_missing_L0_and_noinfo <- dat_p$id[which.max(is.na(dat_p$E_length) & dat_p$ER_S_length == 0)] # 672
+border_missing_L0 <- dat_p$id[which.max(is.na(dat_p$E_length))] # 434
+
+library(ggplot2)
+
+dat_p$ELnew[dat_p$type %in% c("leftcensored - no information", "leftcensored - with information")] <- -30
+dat_p$ERnew[dat_p$type %in% c("leftcensored - no information", "leftcensored - with information")] <- 0
+
+(fig_timeline_partitions <- ggplot(dat_p, aes(y=factor(id))) + 
+     geom_vline(xintercept = 0, color = "darkgrey") +
+    geom_vline(xintercept = -20, color = "grey", size = 0.3) +
+    geom_vline(xintercept = -10, color = "grey", size = 0.3) +
+    geom_vline(xintercept = 10, color = "grey", size = 0.3) +
+    geom_vline(xintercept = 20, color = "grey", size = 0.3) +
+    geom_segment(aes(x=ELnew, xend=ERnew, yend=factor(id)), 
+                 color="grey", size=2, alpha=.25) +
+    geom_point(aes(x=Emid, y=factor(id)), size=0.5, color="darkgrey") +
+    geom_point(aes(x=Snew, y=factor(id)), size=0.5, color="black") +
+#  geom_segment(aes(x=Emid, xend=Snew, yend=factor(id)), size=0.33, color="#999999") +
+
+    # Line per subset
+    geom_hline(yintercept = border_smalllarge - 1.5, linetype = "dashed") +
+    geom_hline(yintercept = border_exact - 1.5, linetype = "dashed") +
+     geom_hline(yintercept = border_missing_L0 + 1.5, linetype = "dashed") +
+     geom_hline(yintercept = border_missing_L0_and_noinfo + -1.5, linetype = "dashed") +
+   
+    # Text per subset
+    geom_text(x = -15, y = border_exact - 15, label = "exactly observed (N = 32)",
+              col = cols_datatypes[1]) +
+    geom_text(x = -15, y = border_smalllarge + 50 , label = "interval censored: \nwindow width > 4 (N = 185)", col = cols_datatypes[3]) +
+    geom_text(x = -15, y = border_smalllarge - 160, label = "interval censored: \nwindow width <= 4 (N = 216)", col = cols_datatypes[2]) +
+    geom_text(x = 15, y = border_missing_L0 + 60, label = "left censored with \ninformation (N = 238)", col = cols_datatypes[4]) +
+     geom_text(x = 15, y = border_missing_L0_and_noinfo + 60, label = "left censored and \nno information (N = 165)", col = cols_datatypes[5]) +
+    
+ 
+    # interval_long   interval_short intervalcensored    leftcensored no info leftcensored with info 238
+    #         185              216               32              165 
+    
+    #ggtitle("Exposure and symptom onset windows") +
+   
+    scale_y_discrete("Case") +
+    theme_bw() +
+    theme(axis.text.y = element_blank(),
+          axis.ticks.y= element_blank(),
+          axis.text.x=element_text(color="black")) + theme(panel.grid.major = element_blank()#, 
+         #   panel.grid.minor = element_blank()
+        ) +  scale_x_continuous("Days from last possible exposure",#breaks = c(-20,-10,0,10,20),
+                       minor_breaks = seq(-25,25,1), 
+                       #breaks = seq(-25,25,1)
+                       ) +
+    coord_cartesian(xlim =c(-25,25))
+)
+
+
+ggsave("graphs/Figure_Timeline_data.jpeg", fig_timeline_partitions, height = 10, width = 8)
+
+```
+
+```{r Figure data}
+
+library(patchwork)
+
+fig_data <- fig_timeline_partitions + fig_datasets +
+  plot_layout(ncol = 2, widths = c(3,2), 
+              guides = "collect") +  plot_annotation(tag_levels = 'a') & theme(legend.position = "bottom")
+
+ggsave("graphs/Fig_Application_data.jpeg", fig_data, height = 7, width = 11)
+
+```
+
+
+# Estimates
+
+```{r Estimates}
+
+for(i in 3:4){
+
+cat("Now starting run", i)
+n.boots <- 1000
+
+dat_selected <- list(
+  set1, set2, set3, set4)[[i]]
+
+
+setname <- c(
+  "EO_Yang", 
+  "EO_ICshort_Yang", 
+             "EO_All_IC_LCinfo_Yang",
+             "EO_IC_LCall_Yang",
+ "EO", 
+  "EO_ICshort", 
+             "EO_All_IC_LCinfo",
+             "EO_IC_LCall")[i]
+
+ests_lognormal <- Estimate_single_mle_survival(dat_selected, distribution = "lognormal")
+#colnames(ests_lognormal) <- paste("lognormal", colnames(ests_lognormal), sep = "_")
+#pars_lognormal <- Estimate_single_mle_survival(dat_selected, distribution = "lognormal", par_estimates = TRUE)
+ests_lognormal$method <- "lognormal"
+ests_lognormal$quantile <- rownames(ests_lognormal)
+
+#ests_Weibull <- Estimate_single_mle_survival(dat_selected, distribution = "Weibull")
+#colnames(ests_Weibull) <- paste("Weibull", colnames(ests_Weibull), sep = "_")
+ests_Weibull <- Estimate_single_mle_flexsurv(dat_selected, distribution = "Weibull")
+
+ #colnames(ests_Weibull) <- paste("Weibull", colnames(ests_Weibull), sep = "_")
+#pars_Weibull <- Estimate_single_mle_survival(dat_selected, distribution = "Weibull", par_estimates = TRUE)
+ests_Weibull$method <- "Weibull"
+ests_Weibull$quantile <- rownames(ests_Weibull)
+
+ests_gamma <- Estimate_single_mle_flexsurv(dat_selected, distribution = "gamma")
+#colnames(ests_gamma) <- paste("gamma", colnames(ests_gamma), sep = "_")
+#pars_gamma <- Estimate_single_mle_flexsurv(dat_selected, distribution = "gamma", par_estimates = TRUE)
+ests_gamma$method <- "gamma"
+ests_gamma$quantile <- rownames(ests_gamma)
+
+ests_NPMLE <- Estimate_single_npmle_survival(dat_selected) #, conf.int = TRUE)
+#colnames(ests_NPMLE) <- paste("NPMLE", colnames(ests_NPMLE), sep = "_")
+#cdf_NPMLE <- Estimate_single_npmle_survival(dat_selected, cdf = TRUE)
+ests_NPMLE$method <- "NPMLE"
+ests_NPMLE$lower_CI <- NA
+ests_NPMLE$upper_CI <- NA
+ests_NPMLE$quantile <- rownames(ests_NPMLE)
+
+#ests_PGM <- Estimate_single_PGM(dat_selected, conf.int = "boot", n.boots = n.boots, lambda = seq(0.5, 5.5, 0.5))
+#ests_PGM$method <- "PGM"
+#ests_PGM$quantile <- rownames(ests_PGM)
+
+ests_new <- rbind(ests_lognormal, ests_Weibull, ests_gamma, ests_NPMLE#, ests_PGM
+                  )
+ests_new$setname <- setname
+ests_new$n <- nrow(dat_selected)
+
+if(i == 1){ests <- ests_new} else{
+ests <- rbind(ests, ests_new)
+}
+
+save(ests, file = paste("Estimates_on_realdata_after_run_", i, "withoutPGM.RData"))
+
+}
+
+```
+
+
+# Plot estimates
+
+```{r Figure Estimates}
+
+load("~/Documents/Incubation and latent period Vietnam/incubation_and_latent_period/application/Estimates_on_realdata_after_run_ 2 .RData")
+ests12 <- ests
+load("~/Documents/Incubation and latent period Vietnam/incubation_and_latent_period/application/Estimates_on_realdata_run_ 3 .RData")
+ests3 <- ests_PGM
+load("~/Documents/Incubation and latent period Vietnam/incubation_and_latent_period/application/Estimates_on_realdata_run_ 4 .RData")
+ests4 <- ests_PGM
+load("~/Documents/Incubation and latent period Vietnam/incubation_and_latent_period/application/Estimates_on_realdata_after_run_ 4 withoutPGM.RData")
+ests_34 <- ests
+
+ests <- rbind(ests12, ests3, ests4, ests_34)
+#load("Estimates_on_realdata.RData")
+
+selected_ests <- ests %>% filter(quantile %in% c("q50", "q95", "q99"))
+
+#selected_ests_withoutyang <- selected_ests %>% filter(setname %in% c("EO", "EO_ICshort", "EO_All_IC_LCinfo", "EO_IC_LCall"))
+selected_ests_withyang <- selected_ests %>% filter(setname %in% c("EO_Yang", "EO_ICshort_Yang", "EO_All_IC_LCinfo_Yang", "EO_IC_LCall_Yang"))
+
+# Reorder levels
+#selected_ests_withoutyang$setname <- factor(selected_ests_withoutyang$setname, levels = c("EO", "EO_ICshort", "EO_All_IC_LCinfo", "EO_IC_LCall"))
+selected_ests_withyang$setname <- factor(selected_ests_withyang$setname, levels = c("EO_Yang", "EO_ICshort_Yang", "EO_All_IC_LCinfo_Yang", "EO_IC_LCall_Yang"), labels = c("exactly observed \n(N = 32)", "+ (short) interval censored (i.c.)\n(N = 248)", "+ i.c. and left censored \nwith info (N = 671)", "+ left censored without info \n(N = 836)"))
+
+selected_ests_withyang$method_short <- factor(selected_ests_withyang$method, levels = c("lognormal", "gamma", "Weibull", "NPMLE", "PGM"), labels = c("LN", "GA", "WB", "NP", "PG"))
+
+( fig_ests <- ggplot(selected_ests_withyang, aes(x = method_short)) + geom_linerange(aes(ymin = lower_CI, ymax = upper_CI, x = method_short), col = "black", position = position_dodge(width = 0.5)) + geom_point(aes(x = method_short, y = est), col = "black", fill = "white", shape = 23, position = position_dodge(width = 0.5)) + 
+facet_grid2(quantile ~ setname,  
+         scales = "free_y", labeller = labeller(
+     #   windowlength = c("standard" = "Window length: standard", "double" = "doubled", "squared" = "squared"),
+        quantile = c("q50" = "Percentile: 50%", "q95" = "95%", "q99" = "99%"))
+) + theme_bw() +
+   #  theme(axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1))
+xlab("Approach") + ylab("Estimated percentile and 95% CI (days since infection)") + theme(strip.background = element_rect(fill=c("white")))
+)
+
+ggsave(fig_ests, filename = "graphs/Fig_Estimates_realdata_withYang.jpeg", width = 8, height = 5, units = "in")
+#ggsave(fig_ests, filename = "graphs/Fig_Estimates_realdata_withoutYang.jpeg")
+```
+
+
+
+```{r Figure Densities and survival}
+# Panel 1: densities. Panel 2: survival.
+
+
+#display.brewer.all(n=NULL, type="all", select=NULL, exact.n=TRUE, 
+#colorblindFriendly=TRUE)
+library(RColorBrewer)
+cols <- brewer.pal(8, "Set2")
+
+library(ggplot2)
+
+#### PDFs ####
+pdfs <- ggplot() + 
+  # lognormal
+   geom_line(aes(x = seq(0, 25, by= 0.01), y = dlnorm(x = seq(0, 25, by= 0.01), meanlog = pars_lognormal[1], sdlog =  pars_lognormal[2]), col = "lognormal")) + 
+    # Weibull
+  geom_line(aes(x = seq(0, 25, by= 0.01), y = dweibull(x = seq(0, 25, by= 0.01), shape = pars_Weibull[1], scale = pars_Weibull[2]), col = "Weibull"))+
+    # gamma
+  geom_line(aes(x = seq(0, 25, by= 0.01), y = dgamma(x = seq(0, 25, by= 0.01), shape = pars_gamma[1], rate = pars_gamma[2]), col = "gamma"))+
+     # PGM
+  geom_line(aes(x = pdf_cdf_PGM[[2]]$t, y = pdf_cdf_PGM[[2]]$`f(t)`, col = "PGM"))+
+   scale_color_manual(values = cols[1:4])+
+
+  # Layout
+  theme(panel.grid.major = element_blank(), panel.grid.minor = element_blank(), panel.background = element_rect(fill = "white",colour = "white",  size = 0.5, linetype = "solid"), legend.position = "right") + labs(x = "Incubation period (days since infection)", y = "Probability", colour = "Approach", fill = "") +
+  scale_x_continuous(expand = c(0, 0), limits = c(0,NA)) + 
+  scale_y_continuous(expand = c(0, 0), limits = c(0, NA)) + guides(linetype = "none") +
+  theme(axis.line = element_line(size = 0.3, colour = "black", linetype=1), legend.position = c(0.8,0.5))
+
+pdfs
+   
+#ggsave("simulation/graphs/Figure_Generated_incubation_time_distributions_p50.pdf", width = 8, height = 4)
+
+
+#### CDFs ####
+cdfs <- ggplot() + 
+  # lognormal
+  geom_line(aes(x = seq(0, 25, by= 0.01), y = plnorm(q = seq(0, 25, by= 0.01), meanlog = pars_lognormal[1], sdlog =  pars_lognormal[2]), col = "lognormal")) + 
+    # Weibull
+  geom_line(aes(x = seq(0, 25, by= 0.01), y = pweibull(q = seq(0, 25, by= 0.01), shape = pars_Weibull[1], scale = pars_Weibull[2]), col = "Weibull"))+
+    # gamma
+  geom_line(aes(x = seq(0, 25, by= 0.01), y = pgamma(q = seq(0, 25, by= 0.01), shape = pars_gamma[1], rate = pars_gamma[2]), col = "gamma"))+
+     # PGM
+  geom_line(aes(x = pdf_cdf_PGM[[3]]$t, y = 1 - pdf_cdf_PGM[[3]]$`S(t)`, col = "PGM"))+
+    # NPMLE
+  geom_step(aes(x = cdf_NPMLE[[2]]$t, y = 1 - cdf_NPMLE[[2]]$S, col = "NPMLE"))+
+   scale_color_manual(values = cols[1:5])+
+
+  # Layout
+  theme(panel.grid.major = element_blank(), panel.grid.minor = element_blank(), panel.background = element_rect(fill = "white",colour = "white",  size = 0.5, linetype = "solid"), legend.position = "right") + labs(x = "Incubation period (days since infection)", y = "P(T < t)", colour = "Approach", fill = "") +
+  scale_x_continuous(expand = c(0, 0), limits = c(0,NA)) + 
+  scale_y_continuous(expand = c(0, 0), limits = c(0, NA)) + guides(linetype = "none") +
+  theme(axis.line = element_line(size = 0.3, colour = "black", linetype=1), legend.position = c(0.8,0.5))
+
+cdfs
+
+#### COMBINED ####
+
+fig_pdf_cdf <- ggarrange(pdfs, cdfs, 
+                    labels = c("a", "b"),
+                    nrow = 1, ncol = 2)
+
+ggsave(fig_pdf_cdf, filename = "application/graphs/Figure_Estimated_pdf_cdf.jpeg", width = 8, height = 4)
+
+```
